@@ -46,8 +46,8 @@ print('Time: {ftime}'.format(ftime = time.time() - start_time))
 search_list = []
 large_font = 32
 
-def addAllPrices(prices):
-    pass
+def addAllPrices(TheNumbersMason):
+    print(TheNumbersMason[1])
 
 def getPrices():
     prices = []
@@ -73,7 +73,7 @@ def updateListUi(place, text):
 
 def priceString(string):
     try:
-        print(string)
+        #print(string)
         # remove <
         li = str(string).split("<")
         first_digit = li[4]
@@ -139,7 +139,6 @@ def startSearch():
         step3 = readFilePrice(step2)
         #checks for price or none, error catching stage
         step4 = priceString(step3)
-        # print(step4)
         updatePriceStr(x, step4)
         # add step4 (price of item) to page for user to see
         x += 1
@@ -166,6 +165,11 @@ def clearList():
         search_list.remove(x)
     print("New search list: \n" + str(search_list))
 
+#let user name the file and then update with the item in the list and save it
+def saveList():
+    f = open('NewFile.txt', 'w')
+    f.write("Hello world")
+
 
 websites = ['homedepot', 'lowes']
 btn_color = '#04426E'
@@ -191,8 +195,14 @@ searchBtn.grid(row=2, column=1)
 clearBtn = tkinter.Button(app, text="Clear", command=clearList, bg=btn_color, fg=txt_color)
 clearBtn.grid(row=3, column=1)
 
+saveListBtn = tkinter.Button(app, text="Save", command=saveList, bg= btn_color, fg=txt_color)
+saveListBtn.grid(row=4, column=1)
+
 item_list = tkinter.Listbox(app, font=large_font)
 item_list.grid(row=2, column=0)
+
+totalPriceHeader = tkinter.Label(app, text="Total: ", fg=txt_color, bg=background_color)
+totalPriceHeader.grid(row=3, column=0)
 
 """customtkinter.set_appearance_mode("dark")
 
