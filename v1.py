@@ -47,7 +47,15 @@ search_list = []
 large_font = 32
 
 def addAllPrices(TheNumbersMason):
-    print(TheNumbersMason[1])
+    total = []
+    for x in TheNumbersMason:
+        if x == 'Not Found':
+            total.append(float(0))
+        else:
+            print(x)
+            total.append(float(x))
+
+    totalPriceNumber.config(text="$" + str(sum(total)))
 
 def getPrices():
     prices = []
@@ -96,8 +104,6 @@ def readFilePrice(link):
 
     # priceString(quote)
     return quote
-
-# TODO: create function to loop through list for searching and then .config the list item with new price
 
 # This function takes the price and item and groups them together to give to a function that will update the UI List
 def updatePriceStr(vname, price):
@@ -179,7 +185,7 @@ background_color = '#0b0c0b'
 app = tkinter.Tk()
 app.configure(bg='black')
 
-label = tkinter.Label(app, text='item', bg='black', fg=txt_color)
+label = tkinter.Label(app, text='item', bg='black', fg=txt_color, font=large_font)
 label.grid(row=0, column=0)
 
 itemInput = tkinter.Entry(app)
@@ -201,8 +207,17 @@ saveListBtn.grid(row=4, column=1)
 item_list = tkinter.Listbox(app, font=large_font)
 item_list.grid(row=2, column=0)
 
-totalPriceHeader = tkinter.Label(app, text="Total: ", fg=txt_color, bg=background_color)
+totalPriceHeader = tkinter.Label(app, text="Total: ", fg=txt_color, bg=background_color, font=large_font)
 totalPriceHeader.grid(row=3, column=0)
+
+totalPriceNumber = tkinter.Label(app, text="$0", fg=txt_color, bg=background_color, font=large_font)
+totalPriceNumber.grid(row=4, column=0)
+
+quantityEntryLabel = tkinter.Label(app, text="Quantity", fg=txt_color, bg=background_color, font=large_font)
+quantityEntryLabel.grid(row=0, column=2)
+
+quantityEntry = tkinter.Entry(app)
+quantityEntry.grid(row=1, column=2)
 
 """customtkinter.set_appearance_mode("dark")
 
