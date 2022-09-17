@@ -1,12 +1,11 @@
-from msilib.schema import ComboBox, ListBox
-from multiprocessing.spawn import import_main_path
-from re import L, search
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+from msilib.schema import ComboBox, ListBox
+from multiprocessing.spawn import import_main_path
 from bs4 import BeautifulSoup
-import tkinter
+from tkinter import *
 #import customtkinter
 import os
 import time
@@ -44,7 +43,32 @@ print('Time: {ftime}'.format(ftime = time.time() - start_time))
 '''
 # Global variables
 search_list = []
-large_font = 32
+
+def updateListAfterQ():
+    x=0
+    for y in search_list:
+        item_list.delete(x)
+        item = search_list[x]
+        item.split(":")
+        item_list.insert(x, item)
+
+        x+=1
+
+def addAfterQuantity():
+    print(search_list)
+    prices = []
+    for x in search_list:
+        test = x.split(":")
+        prices.append(float(test[1]))
+        total_price = sum(prices)
+
+    totalPriceNumber.config(text="$" + str(round(total_price, 2)))
+    updateListAfterQ()
+
+def updatePriceWithQuantity(index):
+    item_price = search_list[index]
+    updated = item_price.split(":")
+    return updated[1]
 
 def addAllPrices(TheNumbersMason):
     total = []
@@ -157,6 +181,13 @@ def startSearch():
 def addItem(Vname):
     Vname.insert(len(search_list), search_list[-1])
 
+def AddToListKey(event):
+    item = itemInput.get()
+    search_list.append(item)
+    # print(search_list)
+    addItem(item_list)
+    return search_list
+
 def AddToList():
     item = itemInput.get()
     search_list.append(item)
@@ -165,59 +196,115 @@ def AddToList():
     return search_list
 
 def clearList():
+    x = len(search_list)
     item_list.delete(0, len(search_list))
-    x = 0
-    for x in search_list:
-        search_list.remove(x)
-    print("New search list: \n" + str(search_list))
+    search_list.clear()
 
 #let user name the file and then update with the item in the list and save it
 def saveList():
     f = open('NewFile.txt', 'w')
-    f.write("Hello world")
+    y = 0
+    total_price = getPrices()
+    f.write("Item: \t")
+    f.write("Price: \n")
+    for x in search_list:
+        item = x.split(":")
+        print(item)
+        f.write(item[0] + "-----")
+        f.write("$" + item[1] + "\n\n")
+        f.write("Total:\n$" + total_price[0])
+        y+=1
+    #f.write(search_list)
 
+#update listbox after quantity
+def listQupdate(index, total_price):
+    #grab item from list
+    step1 = search_list[index]
+    #split to grab number
+    step2 = step1.split(':')
+    #insert new number
+    step2.insert(1, total_price)
+    step3 = step2[2]
+    step2.remove(step3)
+    step4 = str(step2[0]) + ':' + str(step2[1])
+    search_list[index] = step4
+    #update total price
+    addAfterQuantity()
+
+    #return list
+
+#quantity func
+def updateWithQuantity():
+    item_quantity = {}
+    quantity = quantityEntry.get()
+
+    #gets selected listbox item
+    for i in item_list.curselection():
+        #print(item_list.get(i))
+        item_quantity[i] = quantity
+        #print(item_quantity)
+    get_index = item_quantity.keys()
+    for x in get_index:
+        item_price = updatePriceWithQuantity(x)
+        q_price = (float(item_price) * float(quantity))
+        item = x
+    listQupdate(item, q_price)
+    #update search list with new price after quantity
 
 websites = ['homedepot', 'lowes']
 btn_color = '#04426E'
 txt_color = 'white'
 background_color = '#0b0c0b'
+large_font = 32
+btn_width = 7
 
-app = tkinter.Tk()
+app = Tk()
 app.configure(bg='black')
+#bind buttons
+app.bind('<Return>', AddToListKey)
 
-label = tkinter.Label(app, text='item', bg='black', fg=txt_color, font=large_font)
-label.grid(row=0, column=0)
+button_frame = Frame(app, bg=background_color)
+button_frame.grid(row=4, column=1)
 
-itemInput = tkinter.Entry(app)
+#1st column
+item_label = Label(app, text='item', bg='black', fg=txt_color, font=large_font)
+item_label.grid(row=0, column=0)
+
+itemInput = Entry(app)
 itemInput.grid(row=1, column=0)
 
-addBtn = tkinter.Button(app, text='Add', command=AddToList, bg=btn_color, fg=txt_color)
-addBtn.grid(row=1, column=1)
+#Goes in frame
+addBtn = Button(button_frame, text='Add', command=AddToList, bg=btn_color, fg=txt_color, width=btn_width)
+addBtn.grid(row=0, column=0)
 
 # STARTS MAIN PROCESS
-searchBtn = tkinter.Button(app, text='Search', command=startSearch, bg=btn_color, fg=txt_color)
-searchBtn.grid(row=2, column=1)
+searchBtn = Button(button_frame, text='Search', command=startSearch, bg=btn_color, fg=txt_color, width=btn_width)
+searchBtn.grid(row=1, column=0)
 
-clearBtn = tkinter.Button(app, text="Clear", command=clearList, bg=btn_color, fg=txt_color)
-clearBtn.grid(row=3, column=1)
+clearBtn = Button(button_frame, text="Clear", command=clearList, bg=btn_color, fg=txt_color, width=btn_width)
+clearBtn.grid(row=2, column=0)
 
-saveListBtn = tkinter.Button(app, text="Save", command=saveList, bg= btn_color, fg=txt_color)
-saveListBtn.grid(row=4, column=1)
+saveListBtn = Button(button_frame, text="Save", command=saveList, bg= btn_color, fg=txt_color, width=btn_width)
+saveListBtn.grid(row=3, column=0)
 
-item_list = tkinter.Listbox(app, font=large_font)
-item_list.grid(row=2, column=0)
+quantityBtn = Button(button_frame, text="Quantity", command=updateWithQuantity, bg=btn_color, fg=txt_color)
+quantityBtn.grid(row=4, column=0)
 
-totalPriceHeader = tkinter.Label(app, text="Total: ", fg=txt_color, bg=background_color, font=large_font)
-totalPriceHeader.grid(row=3, column=0)
+item_list = Listbox(app, font=large_font)
+item_list.grid(row=4, column=0, pady=5)
 
-totalPriceNumber = tkinter.Label(app, text="$0", fg=txt_color, bg=background_color, font=large_font)
-totalPriceNumber.grid(row=4, column=0)
+totalPriceHeader = Label(app, text="Total: ", fg=txt_color, bg=background_color, font=large_font)
+totalPriceHeader.grid(row=0, column=2)
 
-quantityEntryLabel = tkinter.Label(app, text="Quantity", fg=txt_color, bg=background_color, font=large_font)
-quantityEntryLabel.grid(row=0, column=2)
+totalPriceNumber = Label(app, text="$0", fg=txt_color, bg=background_color, font=large_font)
+totalPriceNumber.grid(row=1, column=2)
 
-quantityEntry = tkinter.Entry(app)
-quantityEntry.grid(row=1, column=2)
+quantityEntryLabel = Label(app, text="Quantity", fg=txt_color, bg=background_color, font=large_font)
+quantityEntryLabel.grid(row=2, column=0)
+
+quantityEntry = Entry(app)
+quantityEntry.grid(row=3, column=0)
+
 
 """customtkinter.set_appearance_mode("dark")
 
