@@ -6,7 +6,6 @@ from msilib.schema import ComboBox, ListBox
 from multiprocessing.spawn import import_main_path
 from bs4 import BeautifulSoup
 from tkinter import *
-#import customtkinter
 import os
 import time
 
@@ -28,19 +27,6 @@ import time
 # Time: 8.239041328430176
 # Time: 6.88259220123291
 
-'''
-driver = 'chromedriver_win32 (1)/chromedriver.exe'
-
-url = input('Where would you buy your supplies from:\n')
-item = input('What do you want to buy:\n')
-browser = webdriver.Chrome(driver)
-start_time = time.time()
-browser.get('http://www.{website}.com'.format(website = str(url)))
-
-
-inputBox = browser.find_element(By.NAME, 'searchTerm').send_keys(item)
-print('Time: {ftime}'.format(ftime = time.time() - start_time))
-'''
 # Global variables
 search_list = []
 
@@ -251,6 +237,14 @@ def updateWithQuantity():
     listQupdate(item, q_price)
     #update search list with new price after quantity
 
+def itemizedPage():
+    labor_frame.grid_forget()
+    itemized.grid(row=0, column=0)
+
+def laborCostPage():
+    itemized.grid_forget()
+    labor_frame.grid(row=0, column=0)
+
 websites = ['homedepot', 'lowes']
 btn_color = '#04426E'
 txt_color = 'white'
@@ -259,18 +253,37 @@ large_font = 32
 btn_width = 7
 
 app = Tk()
-app.configure(bg='black')
+app.configure(bg=background_color)
+
+#Pages
+itemized = Frame(app, bg=background_color)
+itemized.grid(row=0, column=0)
+
+labor_frame = Frame(app, bg=background_color)
+
 #bind buttons
 app.bind('<Return>', AddToListKey)
 
-button_frame = Frame(app, bg=background_color)
+#menu
+menubar = Menu(app)
+app.config(menu=menubar)
+
+file_menu = Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Pages", menu=file_menu)
+file_menu.add_command(label="Itemized", command=itemizedPage)
+file_menu.add_command(label="Labor", command=laborCostPage)
+file_menu.add_command(label="Email")
+
+
+#ITEMIZED PAGE
+button_frame = Frame(itemized, bg=background_color)
 button_frame.grid(row=4, column=1)
 
 #1st column
-item_label = Label(app, text='item', bg='black', fg=txt_color, font=large_font)
+item_label = Label(itemized, text='item', bg=background_color, fg=txt_color, font=large_font)
 item_label.grid(row=0, column=0)
 
-itemInput = Entry(app)
+itemInput = Entry(itemized)
 itemInput.grid(row=1, column=0)
 
 #Goes in frame
@@ -290,43 +303,122 @@ saveListBtn.grid(row=3, column=0)
 quantityBtn = Button(button_frame, text="Quantity", command=updateWithQuantity, bg=btn_color, fg=txt_color)
 quantityBtn.grid(row=4, column=0)
 
-item_list = Listbox(app, font=large_font)
+item_list = Listbox(itemized, font=large_font)
 item_list.grid(row=4, column=0, pady=5)
 
-totalPriceHeader = Label(app, text="Total: ", fg=txt_color, bg=background_color, font=large_font)
+totalPriceHeader = Label(itemized, text="Total: ", fg=txt_color, bg=background_color, font=large_font)
 totalPriceHeader.grid(row=0, column=2)
 
-totalPriceNumber = Label(app, text="$0", fg=txt_color, bg=background_color, font=large_font)
+totalPriceNumber = Label(itemized, text="$0", fg=txt_color, bg=background_color, font=large_font)
 totalPriceNumber.grid(row=1, column=2)
 
-quantityEntryLabel = Label(app, text="Quantity", fg=txt_color, bg=background_color, font=large_font)
+quantityEntryLabel = Label(itemized, text="Quantity", fg=txt_color, bg=background_color, font=large_font)
 quantityEntryLabel.grid(row=2, column=0)
 
-quantityEntry = Entry(app)
+quantityEntry = Entry(itemized)
 quantityEntry.grid(row=3, column=0)
 
+#LABOR PAGE SPECS
+employees = ["Employees"]
+employee_data=[]
+breakdown_clicked = StringVar()
 
-"""customtkinter.set_appearance_mode("dark")
+#LABOR PAGE FUNCTIONS
+def updatePageText():
+    pass
 
-app = customtkinter.CTk()
+def updateInfo():
+    all_cost = []
+    all_hours = []
+    for x in employee_data:
+        employee_name = x["name"]
+        employee_wage = x["wage"]
+        employee_hours = x["hours"]
 
-label = customtkinter.CTkLabel(app, text='item')
-label.grid(row=0, column=0)
+        total_price = float(employee_hours) * float(employee_wage)
 
-itemInput = customtkinter.CTkEntry(app)
-itemInput.grid(row=1, column=0)
+        all_cost.append(total_price)
+        all_hours.append(float(employee_hours))
 
-addBtn = customtkinter.CTkButton(app, text='Add', command=AddToList)
-addBtn.grid(row=1, column=1)
+        sum_cost=sum(all_cost)
+        update_total_cost_text = "Total cost: $" + str(sum_cost)
+        total_cost_label.config(text=update_total_cost_text)
 
-# STARTS MAIN PROCESS
-searchBtn = customtkinter.CTkButton(app, text='Search', command=startSearch)
-searchBtn.grid(row=2, column=1)
+        sum_hours=sum(all_hours)
+        update_total_hours_text = "Total hours: " + str(sum_hours)
+        total_hours_label.config(text=update_total_hours_text)
 
-clearBtn = customtkinter.CTkButton(app, text="Clear", command=clearList)
-clearBtn.grid(row=2, column=0)
+def displaySelected():
+    print(breakdown_clicked.get())
 
-item_list = tkinter.Listbox(app, font=large_font)
-item_list.grid(row=2, column=2)"""
+def updateDropdown():
+    updateInfo()
+    menu = breakdown_selection["menu"]
+    menu.delete(0, "end")
+    for string in employees:
+        menu.add_command(label=string, command=lambda value=string: breakdown_clicked.set(value))
+
+def saveEmployeeInfo(info):
+    employee_data.append(info)
+    employee_name = info["name"]
+    employees.append(employee_name)
+    updateDropdown()
+    return employee_data, employees
+
+def addEmployeeInfo():
+    employee_name = employee_name_entry.get()
+    employee_wage = employee_hourly_pay_entry.get()
+    employee_hours = employee_estimated_hours_entry.get()
+
+    employee_dict = {"name":employee_name, "wage":employee_wage, "hours":employee_hours}
+    saveEmployeeInfo(employee_dict)
+
+
+#LABOR PAGE
+employee_name_label = Label(labor_frame, text="Name", fg=txt_color, bg=background_color, font=large_font)
+employee_name_label.grid(row=0, column=0)
+
+employee_name_entry = Entry(labor_frame)
+employee_name_entry.grid(row=1, column=0)
+
+employee_hourly_pay_label = Label(labor_frame, text="Hourly Wage", fg=txt_color, bg=background_color, font=large_font)
+employee_hourly_pay_label.grid(row=2, column=0)
+
+employee_hourly_pay_entry = Entry(labor_frame)
+employee_hourly_pay_entry.grid(row=3, column=0)
+
+employee_estimated_hours_label = Label(labor_frame, text="Estimated Hours", fg=txt_color, bg=background_color, font=large_font)
+employee_estimated_hours_label.grid(row=4, column=0)
+
+employee_estimated_hours_entry = Entry(labor_frame)
+employee_estimated_hours_entry.grid(row=5, column=0)
+
+save_employee_info = Button(labor_frame, text="Save", bg=btn_color, fg=txt_color, width=btn_width, command=addEmployeeInfo)
+save_employee_info.grid(row=6, column=0)
+
+select_employee_button = Button(labor_frame, text="Select", bg=btn_color, fg=txt_color, width=btn_width, command=displaySelected)
+select_employee_button.grid(row=7, column=0)
+
+total_hours_label = Label(labor_frame, text="Total hours:", bg=background_color, fg=txt_color, font=large_font)
+total_hours_label.grid(row=0, column=1)
+
+total_cost_label = Label(labor_frame, text="total cost:", bg=background_color, fg=txt_color, font=large_font)
+total_cost_label.grid(row=1, column=1)
+
+breakdown_label = Label(labor_frame, text="Breakdown", bg=background_color, fg=txt_color, font=large_font)
+breakdown_label.grid(row=2, column=1)
+
+breakdown_selection = OptionMenu(labor_frame, breakdown_clicked, *employees)
+breakdown_selection.grid(row=3, column=1)
+breakdown_selection.config(bg=background_color, fg=txt_color, highlightthickness=0)
+
+breakdown_hours_label = Label(labor_frame, text="Hours:", bg=background_color, fg=txt_color, font=large_font)
+breakdown_hours_label.grid(row=4, column=1)
+
+breakdown_wage_label = Label(labor_frame, text="Wage: $", bg=background_color, fg=txt_color, font=large_font)
+breakdown_wage_label.grid(row=5, column=1)
+
+total_price_label = Label(labor_frame, text="Total price: $", bg=background_color, fg=txt_color, font=large_font)
+total_price_label.grid(row=6, column=1)
 
 app.mainloop()
