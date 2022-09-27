@@ -1,4 +1,4 @@
-from selenium import webdriver
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from tkinter import *
 import os
 import time
+from selenium import webdriver
 
 # HOME DEPOT AVERAGE: 16S
 # Time: 15.715083122253418
@@ -73,7 +74,8 @@ def getPrices():
     try:
         while x != len(search_list):
             remove_item = search_list[x].split(":")
-            prices.append(remove_item[1])
+            y=float(remove_item[1])
+            prices.append(y)
             x += 1
         return prices
     except IndexError:
@@ -156,11 +158,9 @@ def startSearch():
         #checks for price or none, error catching stage
         step4 = priceString(step3)
         updatePriceStr(x, step4)
-        # add step4 (price of item) to page for user to see
         x += 1
     items_prices = getPrices()
     addAllPrices(items_prices)
-    # print("Final list output: \n" + str(search_list))
     print('Time: {ftime}'.format(ftime=time.time() - start_time))
 
 # below functions manipulate list/items
@@ -186,21 +186,36 @@ def clearList():
     item_list.delete(0, len(search_list))
     search_list.clear()
 
+def checkList():
+    y=0
+    for x in search_list:
+        item = x.split(":")
+        if 'Not Found' in item:
+            del search_list[y]
+        print(search_list)
+        print(y)
+    y+=1
+    print(search_list)
+    return search_list
+
 #let user name the file and then update with the item in the list and save it
 def saveList():
-    f = open('NewFile.txt', 'w')
-    y = 0
+    #total = []
+    f = open('Itemized.txt', 'w')
+    checkList()
     total_price = getPrices()
     f.write("Item: \t")
     f.write("Price: \n")
     for x in search_list:
         item = x.split(":")
-        print(item)
         f.write(item[0] + "-----")
         f.write("$" + item[1] + "\n\n")
-        f.write("Total:\n$" + total_price[0])
-        y+=1
+        #total_price.append(item[1])
+
+    total_price_items = sum(total_price)
+    f.write("Total:\n$" + str(total_price_items))
     #f.write(search_list)
+    f.write("\n*THIS IS AN ESTIMATE ITEM PRICES MAY CHANGE OR VARY FROM LOCATION TO LOCATION")
 
 #update listbox after quantity
 def listQupdate(index, total_price):
@@ -237,13 +252,54 @@ def updateWithQuantity():
     listQupdate(item, q_price)
     #update search list with new price after quantity
 
+#switching pages
+current_page = ["itemized"]
+
 def itemizedPage():
+    current_page.append("itemized")
     labor_frame.grid_forget()
     itemized.grid(row=0, column=0)
+    return current_page
 
 def laborCostPage():
+    current_page.append("labor")
     itemized.grid_forget()
     labor_frame.grid(row=0, column=0)
+    return current_page
+
+#save labor file
+def saveLaborFile():
+    hours_list = []
+    wages_list = []
+    f = open("LaborCost.txt", 'w')
+    f.write("Employee: \t\t")
+    f.write("Wage: \t\t")
+    f.write("Hours: \n")
+    for x in employee_data:
+        name = x["name"]
+        wage = x["wage"]
+        hours = x["hours"]
+        f.write(name + "\t\t\t")
+        f.write(wage + "\t\t\t")
+        f.write(hours + "\n")
+        hours_list.append(float(hours))
+        wages_list.append(float(wage))
+
+    total_hours = sum(hours_list)
+    wages_total = sum(wages_list)
+    total_labor = total_hours * wages_total
+
+    f.write("\n\n\nTotal Hours: " + str(total_hours) + "\n")
+    f.write("Total wages: $" + str(wages_total) + "\n")
+    f.write("Total Labor Price: $" + str(total_labor) + "\n")
+    f.write("*THIS IS AN ESTIMATE HOURS MAY BE AFFECTED BY TASK AT HAND")
+
+def saveFile():
+    print(current_page[-1])
+    if current_page[-1] == 'labor':
+        saveLaborFile()
+    elif current_page[-1] == 'itemized':
+        saveList()
 
 websites = ['homedepot', 'lowes']
 btn_color = '#04426E'
@@ -254,6 +310,7 @@ btn_width = 7
 
 app = Tk()
 app.configure(bg=background_color)
+app.title("Estimator")
 
 #Pages
 itemized = Frame(app, bg=background_color)
@@ -268,13 +325,20 @@ app.bind('<Return>', AddToListKey)
 menubar = Menu(app)
 app.config(menu=menubar)
 
+data = Menu(menubar, tearoff=0)
+menubar.add_cascade(label="File", menu=data)
+data.add_command(label="Save file", command=saveFile)
+
 file_menu = Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Pages", menu=file_menu)
 file_menu.add_command(label="Itemized", command=itemizedPage)
 file_menu.add_command(label="Labor", command=laborCostPage)
+#file_menu.add_command(label="Item Estimate")
+
+#TODO: add email at some point and add it back to the menu
+"""
 file_menu.add_command(label="Email")
-
-
+"""
 #ITEMIZED PAGE
 button_frame = Frame(itemized, bg=background_color)
 button_frame.grid(row=4, column=1)
@@ -297,11 +361,8 @@ searchBtn.grid(row=1, column=0)
 clearBtn = Button(button_frame, text="Clear", command=clearList, bg=btn_color, fg=txt_color, width=btn_width)
 clearBtn.grid(row=2, column=0)
 
-saveListBtn = Button(button_frame, text="Save", command=saveList, bg= btn_color, fg=txt_color, width=btn_width)
-saveListBtn.grid(row=3, column=0)
-
 quantityBtn = Button(button_frame, text="Quantity", command=updateWithQuantity, bg=btn_color, fg=txt_color)
-quantityBtn.grid(row=4, column=0)
+quantityBtn.grid(row=3, column=0)
 
 item_list = Listbox(itemized, font=large_font)
 item_list.grid(row=4, column=0, pady=5)
@@ -324,9 +385,6 @@ employee_data=[]
 breakdown_clicked = StringVar()
 
 #LABOR PAGE FUNCTIONS
-def updatePageText():
-    pass
-
 def updateInfo():
     all_cost = []
     all_hours = []
@@ -348,8 +406,22 @@ def updateInfo():
         update_total_hours_text = "Total hours: " + str(sum_hours)
         total_hours_label.config(text=update_total_hours_text)
 
+def updateBreakdown(wage, hours):
+    total_price = float(wage) * float(hours)
+    updated_text = ("Total price: $" + str(total_price))
+    total_price_label.config(text=updated_text)
+    wage_updated_text = ("Wage: $" + str(wage))
+    breakdown_wage_label.config(text=wage_updated_text)
+    hours_updated_text = ("Hours: " + str(hours))
+    breakdown_hours_label.config(text=hours_updated_text)
+
 def displaySelected():
-    print(breakdown_clicked.get())
+    name = breakdown_clicked.get()
+    for x in employee_data:
+        if x["name"] == name:
+            wage = x["wage"]
+            hours = x["hours"]
+            updateBreakdown(wage, hours)
 
 def updateDropdown():
     updateInfo()
@@ -375,6 +447,7 @@ def addEmployeeInfo():
 
 
 #LABOR PAGE
+
 employee_name_label = Label(labor_frame, text="Name", fg=txt_color, bg=background_color, font=large_font)
 employee_name_label.grid(row=0, column=0)
 
@@ -393,7 +466,7 @@ employee_estimated_hours_label.grid(row=4, column=0)
 employee_estimated_hours_entry = Entry(labor_frame)
 employee_estimated_hours_entry.grid(row=5, column=0)
 
-save_employee_info = Button(labor_frame, text="Save", bg=btn_color, fg=txt_color, width=btn_width, command=addEmployeeInfo)
+save_employee_info = Button(labor_frame, text="Add", bg=btn_color, fg=txt_color, width=btn_width, command=addEmployeeInfo)
 save_employee_info.grid(row=6, column=0)
 
 select_employee_button = Button(labor_frame, text="Select", bg=btn_color, fg=txt_color, width=btn_width, command=displaySelected)
